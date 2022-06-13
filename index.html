@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+
+    <title>Title</title>
+</head>
+<body>
+<h1>Danh sách sản phẩm </h1>
+<button onclick="showAddForm()">Thêm mới</button>
+<button onclick="findAllByOrderByPrice()">Sắp xếp theo giá</button><br><br>
+<input type="text" id="from" placeholder="Giá từ ">
+<input type="text" id="to" placeholder="đến">
+<button onclick="findByPriceBetween()">Tìm theo khoảng giá</button><br><br>
+<div>
+    <input placeholder="Tên" type="text" id="search">
+    <button onclick="searchByName()">Tìm theo tên</button>
+</div><br>
+
+<div id="showFormAdd"></div>
+<div id="showFormEdit"></div>
+<hr>
+<div >
+    <table id="display1" border="1px">
+    </table>
+</div>
+<br>
+<div >
+    <table id="display" border="1px">
+    </table>
+</div>
+
+<script type="text/javascript">
+    let show = document.getElementById("display");
+    let show1 = document.getElementById("display1");
+    //hàm in ra sp
+    function display(data) {
+        let content = `<tr>
+                        <th>Name</th>
+                        <th>Price</th>
+                        <th>Category</th>
+                        <th>Action</th>
+                        <th>Action</th>
+                    </tr>`;
+        console.log(data)
+        for (let i = 0; i < data.length; i++) {
+            content += getProduct(data[i]);
+        }
+        show.innerHTML = content;
+    }
+    // lấy dữ liệu
+    function getProduct(product) {
+        return `<tr>
+            <td>${product.name}</td>
+            <td>${product.price}</td>
+            <td>${product.category.name}</td>
+            <td><button onclick="showEditForm(${product.id})">Sửa</button></td>
+            <td><button onclick="deleteProduct(${product.id})">Xóa</button></td>
+        </tr>`
+    }
+    //hiển thị tất cả sản phẩm
+    function findAllProduct() {
+        $.ajax({
+            type: "GET",
+            url: "http://localhost:8080/api/product",
+            success: function (data) {
+                display(data)
+            }, error: function (error) {
+                console.log(error);
+            }
+        })
+    }
+    //show form thêm mới
+    function showAddForm(){
+        $.ajax({
+            type: "GET",
+            url: "http://localhost:8080/api/categories",
+            success: function (data) {
+                let str = "    <input placeholder='Name' type=\"text\" id=\"name\">\n" +
+                    "    <input placeholder='Price' type=\"text\" id=\"price\">\n" +
+                    getCategory(data)+
+                    "    <button onclick='save()'>Thêm</button>"
+                document.getElementById("showFormAdd").innerHTML = str;
+            }, error: function (error) {
+                console.log(error);
+            }
+        })
+    }
+    //show form sửa sản phẩm
+    function showEditForm(id){
+
+        $.ajax({
+            type: "GET",
+            url: "http://localhost:8080/api/product/" + id,
+            success: function (data) {
+
+                let str = `    Name<input value="${data.name}" type=\"text\" id=\"name\">\n` +
+                    `    Price<input type=\"number\" id=\"price\" value="${data.price}">\n` +
+                    `    CategoryId<input type=\"number\" id=\"category\" value="${data.category.id}">\n` +
+                    `    <button onclick='update(${data.id})'>Edit</button>`
+                document.getElementById("showFormEdit").innerHTML = str;
+            }
+        })
+    }
+    //lưu dữ liệu sau khi thêm mới
+    function save() {
+        let name = document.getElementById("name").value;
+        let price = document.getElementById("price").value;
+        let categoryId = document.getElementById("category").value;
+        let pro = {
+
+            name: name,
+            price: price,
+            category: {
+                id: categoryId
+            }
+        }
+        $.ajax({
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            type: 'POST',
+            url: 'http://localhost:8080/api/product',
+            data: JSON.stringify(pro),
+            success: function () {
+                findAllProduct()
+            },
+            error: function (error) {
+                console.log(error)
+            }
+        })
+    }
+    //sắp xếp theo giá
+    function findAllByOrderByPrice() {
+        $.ajax({
+            type: "GET",
+            url: "http://localhost:8080/api/product/sortByPrice",
+            success: function (data) {
+                display(data)
+            }, error: function (error) {
+                console.log(error);
+            }
+        })
+    }
+    //tìm thoe khoảng giá
+    function findByPriceBetween() {
+        let from = document.getElementById('from').value;
+        let to = document.getElementById('to').value;
+        $.ajax({
+            type: "GET",
+            url: "http://localhost:8080/api/product/price-between?from=" + from + "&to=" + to,
+            success: function (data) {
+                display(data)
+            }, error: function (error) {
+                console.log(error);
+            }
+        })
+    }
+    //sửa
+    function update(id) {
+        let name = document.getElementById("name").value;
+        let price = document.getElementById("price").value;
+        let categoryId = document.getElementById("category").value;
+        let pro = {
+            id: id,
+            name: name,
+            price: price,
+            category: {
+                id: categoryId
+            }
+        }
+        $.ajax({
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            type: 'PUT',
+            url: 'http://localhost:8080/api/product/'+id,
+            data: JSON.stringify(pro),
+            success: function () {
+                findAllProduct()
+            },
+            error: function (error) {
+                console.log(error)
+            }
+        })
+    }
+    //tìm kiếm theo tên
+    function searchByName() {
+        let name = $('#search').val();
+        $.ajax({
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            type: "GET",
+            //tên API
+            url: "http://localhost:8080/api/product/search?name="+name,
+            //xử lý khi thành công
+            success: function (data) {
+                display(data)
+            }
+
+        });
+    }
+    //xóa
+    function deleteProduct(id){
+        $.ajax({
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            type: "DELETE",
+            //tên API
+            url: "http://localhost:8080/api/product/"+id,
+            //xử lý khi thành công
+            success: function () {
+                findAllProduct()
+            }
+
+        });
+    }
+    //show category
+    function findAllCategory() {
+        $.ajax({
+            type: "GET",
+            url: "http://localhost:8080/api/categories",
+            success: function (data) {
+                let content = `<tr>
+                        <th>Category</th>
+                    </tr>`;
+                console.log(data)
+                for (let i = 0; i < data.length; i++) {
+                    content += `<tr>
+            <td><a href="#" onclick="findAllProductByCategory(${data[i].id})">${data[i].name}</a></td>
+        </tr>`;
+                }
+                show1.innerHTML = content;
+            }, error: function (error) {
+                console.log(error);
+            }
+        })
+    }
+    //tìm tất cả product theo category
+    function findAllProductByCategory(id) {
+        $.ajax({
+            type: "GET",
+            url: "http://localhost:8080/api/categories/view-category/"+id,
+            success: function (data) {
+                display(data)
+            }, error: function (error) {
+                console.log(error);
+            }
+        })
+    }
+    //
+    function getCategory(data){
+        let str = "";
+        for (let i = 0; i< data.length;i++){
+            str += `
+                         <option value="${data[i].id}">${data[i].name}</option>
+                               `
+
+        } return "<select id=\"category\">" + str +"</select>";
+    }
+    findAllCategory()
+    findAllProduct();
+
+
+</script>
+
+</body>
+</html>

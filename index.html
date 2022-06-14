@@ -9,7 +9,9 @@
 <body>
 <h1>Danh sách sản phẩm </h1>
 <button onclick="showAddForm()">Thêm mới</button>
-<button onclick="findAllByOrderByPrice()">Sắp xếp theo giá</button><br><br>
+<button onclick="findAllByOrderByPrice()">Sắp xếp theo giá</button>
+<button onclick="getTop4New()">Top 4 sản phẩm mới</button>
+<br><br>
 <input type="text" id="from" placeholder="Giá từ ">
 <input type="text" id="to" placeholder="đến">
 <button onclick="findByPriceBetween()">Tìm theo khoảng giá</button><br><br>
@@ -30,7 +32,6 @@
     <table id="display" border="1px">
     </table>
 </div>
-
 <script type="text/javascript">
     let show = document.getElementById("display");
     let show1 = document.getElementById("display1");
@@ -94,13 +95,19 @@
             type: "GET",
             url: "http://localhost:8080/api/product/" + id,
             success: function (data) {
+                $.ajax({
+                    type: "GET",
+                    url: "http://localhost:8080/api/categories",
+                    success: function (category) {
 
-                let str = `    Name<input value="${data.name}" type=\"text\" id=\"name\">\n` +
-                    `    Price<input type=\"number\" id=\"price\" value="${data.price}">\n` +
-                    `    CategoryId<input type=\"number\" id=\"category\" value="${data.category.id}">\n` +
-                    `    <button onclick='update(${data.id})'>Edit</button>`
-                document.getElementById("showFormEdit").innerHTML = str;
-            }
+                        let str = `    Name<input value="${data.name}" type=\"text\" id=\"name\">\n` +
+                            `    Price<input type=\"number\" id=\"price\" value="${data.price}">\n` +
+                            getCategory(category)+
+                            `    <button onclick='update(${data.id})'>Edit</button>`
+                        document.getElementById("showFormEdit").innerHTML = str;
+                    }
+                })
+                }
         })
     }
     //lưu dữ liệu sau khi thêm mới
@@ -208,10 +215,6 @@
     //xóa
     function deleteProduct(id){
         $.ajax({
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            },
             type: "DELETE",
             //tên API
             url: "http://localhost:8080/api/product/"+id,
@@ -255,20 +258,29 @@
             }
         })
     }
-    //
+    //form select option
     function getCategory(data){
         let str = "";
         for (let i = 0; i< data.length;i++){
-            str += `
-                         <option value="${data[i].id}">${data[i].name}</option>
-                               `
-
+            str += `<option value="${data[i].id}">${data[i].name}</option>`
         } return "<select id=\"category\">" + str +"</select>";
     }
+    //top 4 sp mơi
+    function getTop4New() {
+        $.ajax({
+            type: "GET",
+            url: "http://localhost:8080/api/product/getTop4",
+            success: function (data) {
+                display(data)
+            }, error: function (error) {
+                console.log(error);
+            }
+        })
+    }
+
+
     findAllCategory()
     findAllProduct();
-
-
 </script>
 
 </body>
